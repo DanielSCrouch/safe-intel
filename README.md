@@ -71,6 +71,45 @@ To access URL via public network, edit the VM's assigned security groups to enab
 
 ## Create file-collect Container
 
+https://www.kubeflow.org/docs/components/pipelines/sdk/component-development/#design
+
+
+```bash
+python3 file-collect/file-collect.py --user "DanielSCrouch" --repo "safe-intel" --branch "main" --subdirectory "files" --outdir "/tmp/tmp" --respath "/tmp/results"
+```
+
+```bash
+docker run \
+  -e USER='DanielSCrouch' \
+  -e REPO='safe-intel' \
+  -e BRANCH='main' \
+  -e SUBDIRECTORY='files' \
+  -e OUTDIR='/tmp/tmp' \
+  -e RESPATH='/tmp/results' \
+  duartcs/filecollect:latest
+```
+
 ## Create file-copy Container
 
 ## Create Pipeline 
+
+1. [Install the Kubeflow Pipelines SDK](https://www.kubeflow.org/docs/components/pipelines/sdk/install-sdk/)
+
+```bash 
+python3 -m venv venv
+source venv/bin/activate
+pip3 install kfp --upgrade
+```
+
+
+
+cd pipelines
+
+
+
+## Requirements
+
+```bash 
+pip3 freeze > requirements.txt
+pip3 install -r requirements.txt
+```

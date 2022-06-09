@@ -1,8 +1,3 @@
-import kfp
-from kfp import dsl
-from kfp import components as comp
-
-create_step_collect_files = comp.load_component_from_text("""
 name: Collect Files
 description: Downloads files from Github Repository directory.
 
@@ -37,32 +32,4 @@ implementation:
       {inputValue: outdir},
       --respath,
       {outputPath: respath},
-    ]""")
-
-
-@dsl.pipeline(name='safe-intelligence-pipeline')
-def pipeline():
-
-    vop = dsl.VolumeOp(
-    name="volume_creation",
-    resource_name="mypvc",
-    modes=kfp.dsl.VOLUME_MODE_RWO,
-    size="1Gi"
-    )
-
-    collect_files_step = create_step_collect_files()
-
-    collect_files_step.add_pvolumes({"/mnt'": vop.volume})
-
-    print(collect_files_step.outputs)
-
-    # with dsl.ParallelFor(collect_files_step.output) as item:
-    #     op1 = dsl.ContainerOp(
-    #         name="my-item-print",
-    #         image="library/bash:4.4.23",
-    #         command=["sh", "-c"],
-    #         arguments=["echo do output op1 item: %s" % item],
-    #     )
-
-if __name__ == '__main__':
-    kfp.compiler.Compiler().compile(pipeline, __file__ + '.yaml')
+    ]
