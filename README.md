@@ -67,16 +67,31 @@ To access URL via public network, edit the VM's assigned security groups to enab
 
 ## MinIO File Storage
 
+[x] Write manifest for stateful MinIO app
+[ ] Write python client for 2nd stage app
+
 ## Create PVC
+
+[ ] Check altnerative PVC backends (work with exisiting local file PVs?)
 
 ## Create file-collect Container
 
-https://www.kubeflow.org/docs/components/pipelines/sdk/component-development/#design
+1. [Component development](https://www.kubeflow.org/docs/components/pipelines/sdk/component-development/#design)
 
+2. Run app directly (testing)
 
 ```bash
 python3 file-collect/file-collect.py --user "DanielSCrouch" --repo "safe-intel" --branch "main" --subdirectory "files" --outdir "/tmp/tmp" --respath "/tmp/results"
 ```
+
+3. Build containerised applications 
+
+```bash 
+cd hack
+./build-images.sh
+```
+
+3. Run app via Docker
 
 ```bash
 docker run \
@@ -91,6 +106,10 @@ docker run \
 
 ## Create file-copy Container
 
+[ ] Consume same PCV as stage 1
+[ ] Write app to receive list of file paths as inputs 
+[ ] Write Minio client to upload files to local cloud storage (or S3?)
+
 ## Create Pipeline 
 
 1. [Install the Kubeflow Pipelines SDK](https://www.kubeflow.org/docs/components/pipelines/sdk/install-sdk/)
@@ -100,12 +119,6 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install kfp --upgrade
 ```
-
-
-
-cd pipelines
-
-
 
 ## Requirements
 
