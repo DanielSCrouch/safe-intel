@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: safe-intelligence-pipeline-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-09T17:53:24.423590',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-09T18:05:02.016386',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "safe-intelligence-pipeline"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12}
 spec:
@@ -12,7 +12,7 @@ spec:
     container:
       args: []
       command: [python3, ./file-collect.py, --user, DanielSCrouch, --repo, safe-intel,
-        --branch, main, --subdirectory, files, --outdir, /tmp/tmp, --respath, /tmp/outputs/respath/data]
+        --branch, main, --subdirectory, files, --outdir, /mnt/files, --respath, /tmp/outputs/respath/data]
       image: index.docker.io/duartcs/filecollect:latest
       volumeMounts:
       - {mountPath: /mnt', name: volume-creation}
@@ -38,13 +38,13 @@ spec:
           "Github repository name.", "name": "repo", "type": "String"}, {"default":
           "main", "description": "Github branch name.", "name": "branch", "type":
           "String"}, {"default": "files", "description": "Github sub-directory name.",
-          "name": "subdirectory", "type": "String"}, {"default": "/tmp/tmp", "description":
+          "name": "subdirectory", "type": "String"}, {"default": "/mnt/files", "description":
           "Path to local directory to save files to.", "name": "outdir", "type": "String"}],
           "name": "Collect Files", "outputs": [{"description": "Path to file to save
           results to. Results are paths to each downloaded file.", "name": "respath",
-          "type": "Data"}]}', pipelines.kubeflow.org/component_ref: '{"digest": "9623aa19cf2152e6906b1689fd260ead55896d9cc7d15847e33fd67b8275aab4"}',
+          "type": "Data"}]}', pipelines.kubeflow.org/component_ref: '{"digest": "0a55bbde33a9a3d357971d34875b636e049075bdfc0e5b4f3684b080a51727d1"}',
         pipelines.kubeflow.org/arguments.parameters: '{"branch": "main", "outdir":
-          "/tmp/tmp", "repo": "safe-intel", "subdirectory": "files", "user": "DanielSCrouch"}'}
+          "/mnt/files", "repo": "safe-intel", "subdirectory": "files", "user": "DanielSCrouch"}'}
     volumes:
     - name: volume-creation
       persistentVolumeClaim: {claimName: '{{inputs.parameters.volume-creation-name}}'}

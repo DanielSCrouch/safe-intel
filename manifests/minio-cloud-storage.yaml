@@ -1,0 +1,158 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: si-minio-database
+  namespace: default
+  labels:
+    app: si-minio-database
+spec:
+  serviceName: si-minio-database-svc # headless service
+  replicas: 1
+  podManagementPolicy: "Parallel"
+  selector:
+    matchLabels:
+      app: si-minio-database
+  template:
+    metadata:
+      labels:
+        app: si-minio-database
+    spec:
+      terminationGracePeriodSeconds: 1
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      nodeSelector:
+        dedicated: master 
+      containers:
+        - name: si-minio-database
+          image: minio/minio:latest
+          volumeMounts:
+          - name: si-minio-database-volume
+            mountPath: /data
+          args:
+          - server
+          - "/data"
+          - "--console-address"
+          - ":9002"
+          env:
+          - name: MINIO_ACCESS_KEY
+            value: "admin"
+          - name: MINIO_SECRET_KEY
+            value: "admin1234"
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /minio/health/live
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 10
+          ports:
+            - name: server
+              containerPort: 9000
+              protocol: TCP
+            - name: console
+              containerPort: 9002
+              protocol: TCP
+  volumeClaimTemplates: # This is the specification in which you reference the StorageClass
+  - metadata:
+      name: si-minio-database-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi        
+      storageClassName: si-minio-database-sc-local # This field references the existing StorageClass
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: si-minio-database-svc-headless
+  namespace: default
+  labels:
+    app: si-minio-database
+spec:
+  clusterIP: None
+  selector:
+    app: si-minio-database
+  publishNotReadyAddresses: true
+  ports:
+  - name: server
+    port: 9000
+    protocol: TCP
+    targetPort: server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: si-minio-database-svc
+  namespace: default
+  labels:
+    app: si-minio-database
+spec:
+  type: ClusterIP
+  selector:
+    app: si-minio-database
+  ports:
+  - name: server
+    port: 9000
+    targetPort: server
+    protocol: TCP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: si-minio-database-pvc-local
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: si-minio-database-sc-local
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: si-minio-database-sc-local
+  namespace: default
+provisioner: kubernetes.io/no-provisioner  # Change this according to different Public Cloud or Infra
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+mountOptions:
+  - debug
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: si-minio-database-pv-local
+  namespace: default
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: si-minio-database-sc-local
+  local:
+    path: /mnt/disk/default/minio
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: dedicated
+          operator: In
+          values:
+          - master
