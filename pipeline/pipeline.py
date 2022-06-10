@@ -92,10 +92,10 @@ def pipeline():
     collect_files_step = create_step_collect_files()
     collect_files_step.add_pvolumes({"/mnt'": vop.volume})
 
-    print(collect_files_step.outputs)
+    print(collect_files_step.output)
 
     with dsl.ParallelFor(collect_files_step.output) as item:
-      upload_file_step = create_step_upload_files()
+      upload_file_step = create_step_upload_files(filepath=item)
       upload_file_step.add_pvolumes({"/mnt'": vop.volume})
 
     print("finished...") 

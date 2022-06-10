@@ -25,6 +25,7 @@ kfp==1.8.12
 kfp-pipeline-spec==0.1.16
 kfp-server-api==1.8.1
 kubernetes==18.20.0
+minio==7.1.8
 oauthlib==3.2.0
 protobuf==3.20.1
 pyasn1==0.4.8

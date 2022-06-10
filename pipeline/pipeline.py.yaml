@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: safe-intelligence-pipeline-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-10T15:01:11.052870',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-10T16:14:47.214977',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "safe-intelligence-pipeline"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12}
 spec:
@@ -54,6 +54,7 @@ spec:
   - name: for-loop-1
     inputs:
       parameters:
+      - {name: collect-files-respath-loop-item}
       - {name: volume-creation-name}
     dag:
       tasks:
@@ -61,6 +62,7 @@ spec:
         template: upload-file
         arguments:
           parameters:
+          - {name: collect-files-respath-loop-item, value: '{{inputs.parameters.collect-files-respath-loop-item}}'}
           - {name: volume-creation-name, value: '{{inputs.parameters.volume-creation-name}}'}
   - name: safe-intelligence-pipeline
     dag:
@@ -76,20 +78,22 @@ spec:
         dependencies: [collect-files, volume-creation]
         arguments:
           parameters:
+          - {name: collect-files-respath-loop-item, value: '{{item}}'}
           - {name: volume-creation-name, value: '{{tasks.volume-creation.outputs.parameters.volume-creation-name}}'}
         withParam: '{{tasks.collect-files.outputs.parameters.collect-files-respath}}'
       - {name: volume-creation, template: volume-creation}
   - name: upload-file
     container:
       args: []
-      command: [python3, ./file-upload.py, --filepath, /tmp/test-file-1.txt, --storageurl,
-        '18.132.68.212:8082', --accesskey, admin, --secretkey, admin1234, --region,
-        test, --bucket, '', --respath, /tmp/outputs/respath/data]
+      command: [python3, ./file-upload.py, --filepath, '{{inputs.parameters.collect-files-respath-loop-item}}',
+        --storageurl, '18.132.68.212:8082', --accesskey, admin, --secretkey, admin1234,
+        --region, test, --bucket, '', --respath, /tmp/outputs/respath/data]
       image: index.docker.io/duartcs/fileupload:latest
       volumeMounts:
       - {mountPath: /mnt', name: volume-creation}
     inputs:
       parameters:
+      - {name: collect-files-respath-loop-item}
       - {name: volume-creation-name}
     outputs:
       artifacts:
@@ -118,8 +122,8 @@ spec:
           File", "outputs": [{"description": "Path to file to save results to. Result
           is bucket/filename.", "name": "respath", "type": "Data"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
           "03030462c73388c451a1eafb3e830fb40740e16d94b5e9eb638ea9807f2abcb2"}', pipelines.kubeflow.org/arguments.parameters: '{"accesskey":
-          "admin", "bucket": "", "filepath": "/tmp/test-file-1.txt", "region": "test",
-          "secretkey": "admin1234", "storageurl": "18.132.68.212:8082"}'}
+          "admin", "bucket": "", "filepath": "{{inputs.parameters.collect-files-respath-loop-item}}",
+          "region": "test", "secretkey": "admin1234", "storageurl": "18.132.68.212:8082"}'}
     volumes:
     - name: volume-creation
       persistentVolumeClaim: {claimName: '{{inputs.parameters.volume-creation-name}}'}

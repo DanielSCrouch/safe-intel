@@ -91,7 +91,7 @@ if __name__ == "__main__":
     results = download_files(url_paths, args.outdir)
     store_results(args.respath, results)
 
-    time.sleep(15) 
+    time.sleep(10) 
 
 
 # python3 file-collect/file-collect.py --user "DanielSCrouch" --repo "safe-intel" --branch "main" --subdirectory "files" --outdir "/tmp/tmp" --respath "/tmp/results"
