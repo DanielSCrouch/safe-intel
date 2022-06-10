@@ -73,7 +73,9 @@ To create local filesystem directory (with MiniKube)
 
 ```bash 
 minikube ssh
+sudo mkdir -p /mnt/data/minio
 sudo mkdir -p /mnt/minio
+sudo mkdir -p /mnt/disk/safeintelligencepv
 ```
 
 To access Console URL via public network, edit the VM's assigned security groups to enable Inbound Traffic TCP traffic to port 8081. 

@@ -2,19 +2,19 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: safe-intelligence-sg
-  namespace: default
+  name: safe-intelligence-pipeline-sg
+  namespace: workflow
 provisioner: kubernetes.io/no-provisioner  # Change this according to different Public Cloud or Infra
-reclaimPolicy: Delete
-volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+# volumeBindingMode: WaitForFirstConsumer
 mountOptions:
   - debug
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: safe-intelligence-pv-local
-  namespace: default
+  name: safe-intelligence-pipeline-pv-local
+  namespace: workflow
 spec:
   capacity:
     storage: 10Gi
@@ -22,14 +22,14 @@ spec:
   accessModes:
   - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: safe-intelligence-sg
+  storageClassName: safe-intelligence-pipeline-sg
   local:
     path: /mnt/disk/safeintelligencepv
   nodeAffinity:
     required:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: dedicated
+        - key: node-role.kubernetes.io/master
           operator: In
           values:
-          - master
+          - ""

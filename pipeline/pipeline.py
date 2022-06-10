@@ -1,6 +1,7 @@
 import kfp
 from kfp import dsl
 from kfp import components as comp
+from kubernetes import client as k8s_client
 
 create_step_collect_files = comp.load_component_from_text("""
 name: Collect Files
@@ -48,8 +49,8 @@ inputs:
 - {name: storageurl, type: String, default: '18.132.68.212:8082', description: 'URL of MinIO Cloud storage.'}
 - {name: accesskey, type: String, default: 'admin', description: 'Access key for MinIO Cloud storage.'}
 - {name: secretkey, type: String, default: 'admin1234', description: 'Secret key for MinIO Cloud storage.'}
-- {name: region, type: String, default: 'test', description: 'MinIO Cloud storage region.'}
-- {name: bucket, type: String, default: '', description: 'MinIO Cloud storage bucket.'}
+- {name: region, type: String, default: '', description: 'MinIO Cloud storage region.'}
+- {name: bucket, type: String, default: 'test', description: 'MinIO Cloud storage bucket.'}
 outputs:
 - {name: respath, type: Data, description: 'Path to file to save results to. Result is bucket/filename.'}
 
@@ -79,24 +80,35 @@ implementation:
       {outputPath: respath},
     ]""")
 
-@dsl.pipeline(name='safe-intelligence-pipeline')
+@dsl.pipeline(name='safe-intelligence-pipeline-6')
 def pipeline():
 
     vop = dsl.VolumeOp(
     name="volume_creation",
-    resource_name="mypvc",
+    resource_name="si-pipeline-pvc",
+    storage_class="safe-intelligence-pipeline-sg",
     modes=kfp.dsl.VOLUME_MODE_RWO,
     size="1Gi"
     )
 
     collect_files_step = create_step_collect_files()
-    collect_files_step.add_pvolumes({"/mnt'": vop.volume})
+    # collect_files_step.add_pvolumes({"/mnt'": vop.volume})
+    collect_files_step.add_volume(vop.volume).add_volume_mount(
+      k8s_client.V1VolumeMount(mount_path="/mnt", name=vop.volume.name)
+    )
 
     print(collect_files_step.output)
 
     with dsl.ParallelFor(collect_files_step.output) as item:
       upload_file_step = create_step_upload_files(filepath=item)
-      upload_file_step.add_pvolumes({"/mnt'": vop.volume})
+      # upload_file_step.add_pvolumes({"/mnt'": vop.volume})
+      upload_file_step.add_volume(vop.volume).add_volume_mount(
+        k8s_client.V1VolumeMount(mount_path="/mnt", name=vop.volume.name)
+      ) 
+
+    dsl.get_pipeline_conf().set_ttl_seconds_after_finished(5)
+
+    vop.delete()
 
     print("finished...") 
 
