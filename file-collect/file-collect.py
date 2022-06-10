@@ -53,6 +53,7 @@ def download_files(url_paths: List[str], out_dir: str) -> List[str]:
 def store_results(respath: str, results: List[str]):
     with open(respath, 'w+') as f:
         f.write(json.dumps(results))
+        print("result: ", f.read())
         # for res in results:
         #     f.write("{}\n".format(res))
 
