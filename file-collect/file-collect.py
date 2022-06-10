@@ -9,6 +9,7 @@ import re
 from urllib.parse import urljoin
 import os
 import time
+import json
 
 # Find all files from a remote GitHub repository
 def find_file_paths(user: str, repo: str, branch: str, subfolder: str)  -> List[str]:
@@ -51,8 +52,9 @@ def download_files(url_paths: List[str], out_dir: str) -> List[str]:
 # Store results in file
 def store_results(respath: str, results: List[str]):
     with open(respath, 'w+') as f:
-        for res in results:
-            f.write("{}\n".format(res))
+        f.write(json.dumps(results))
+        # for res in results:
+        #     f.write("{}\n".format(res))
 
 if __name__ == "__main__":
 
