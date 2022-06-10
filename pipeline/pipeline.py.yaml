@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: safe-intelligence-pipeline-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-09T18:05:02.016386',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12, pipelines.kubeflow.org/pipeline_compilation_time: '2022-06-10T15:01:11.052870',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "safe-intelligence-pipeline"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.12}
 spec:
@@ -20,6 +20,9 @@ spec:
       parameters:
       - {name: volume-creation-name}
     outputs:
+      parameters:
+      - name: collect-files-respath
+        valueFrom: {path: /tmp/outputs/respath/data}
       artifacts:
       - {name: collect-files-respath, path: /tmp/outputs/respath/data}
     metadata:
@@ -48,6 +51,17 @@ spec:
     volumes:
     - name: volume-creation
       persistentVolumeClaim: {claimName: '{{inputs.parameters.volume-creation-name}}'}
+  - name: for-loop-1
+    inputs:
+      parameters:
+      - {name: volume-creation-name}
+    dag:
+      tasks:
+      - name: upload-file
+        template: upload-file
+        arguments:
+          parameters:
+          - {name: volume-creation-name, value: '{{inputs.parameters.volume-creation-name}}'}
   - name: safe-intelligence-pipeline
     dag:
       tasks:
@@ -57,7 +71,58 @@ spec:
         arguments:
           parameters:
           - {name: volume-creation-name, value: '{{tasks.volume-creation.outputs.parameters.volume-creation-name}}'}
+      - name: for-loop-1
+        template: for-loop-1
+        dependencies: [collect-files, volume-creation]
+        arguments:
+          parameters:
+          - {name: volume-creation-name, value: '{{tasks.volume-creation.outputs.parameters.volume-creation-name}}'}
+        withParam: '{{tasks.collect-files.outputs.parameters.collect-files-respath}}'
       - {name: volume-creation, template: volume-creation}
+  - name: upload-file
+    container:
+      args: []
+      command: [python3, ./file-upload.py, --filepath, /tmp/test-file-1.txt, --storageurl,
+        '18.132.68.212:8082', --accesskey, admin, --secretkey, admin1234, --region,
+        test, --bucket, '', --respath, /tmp/outputs/respath/data]
+      image: index.docker.io/duartcs/fileupload:latest
+      volumeMounts:
+      - {mountPath: /mnt', name: volume-creation}
+    inputs:
+      parameters:
+      - {name: volume-creation-name}
+    outputs:
+      artifacts:
+      - {name: upload-file-respath, path: /tmp/outputs/respath/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.12
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"description": "Uploads
+          a file to MinIO Bucket.", "implementation": {"container": {"command": ["python3",
+          "./file-upload.py", "--filepath", {"inputValue": "filepath"}, "--storageurl",
+          {"inputValue": "storageurl"}, "--accesskey", {"inputValue": "accesskey"},
+          "--secretkey", {"inputValue": "secretkey"}, "--region", {"inputValue": "region"},
+          "--bucket", {"inputValue": "bucket"}, "--respath", {"outputPath": "respath"}],
+          "image": "index.docker.io/duartcs/fileupload:latest"}}, "inputs": [{"default":
+          "/tmp/test-file-1.txt", "description": "Path to file for upload.", "name":
+          "filepath", "type": "String"}, {"default": "18.132.68.212:8082", "description":
+          "URL of MinIO Cloud storage.", "name": "storageurl", "type": "String"},
+          {"default": "admin", "description": "Access key for MinIO Cloud storage.",
+          "name": "accesskey", "type": "String"}, {"default": "admin1234", "description":
+          "Secret key for MinIO Cloud storage.", "name": "secretkey", "type": "String"},
+          {"default": "test", "description": "MinIO Cloud storage region.", "name":
+          "region", "type": "String"}, {"default": "", "description": "MinIO Cloud
+          storage bucket.", "name": "bucket", "type": "String"}], "name": "Upload
+          File", "outputs": [{"description": "Path to file to save results to. Result
+          is bucket/filename.", "name": "respath", "type": "Data"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "03030462c73388c451a1eafb3e830fb40740e16d94b5e9eb638ea9807f2abcb2"}', pipelines.kubeflow.org/arguments.parameters: '{"accesskey":
+          "admin", "bucket": "", "filepath": "/tmp/test-file-1.txt", "region": "test",
+          "secretkey": "admin1234", "storageurl": "18.132.68.212:8082"}'}
+    volumes:
+    - name: volume-creation
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.volume-creation-name}}'}
   - name: volume-creation
     resource:
       action: create

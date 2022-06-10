@@ -29,7 +29,7 @@ spec:
         operator: "Exists"
         effect: "NoSchedule"
       nodeSelector:
-        dedicated: master 
+        node-role.kubernetes.io/master: ""
       containers:
         - name: si-minio-database
           image: minio/minio:latest
@@ -73,6 +73,23 @@ spec:
         requests:
           storage: 10Gi        
       storageClassName: si-minio-database-sc-local # This field references the existing StorageClass
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: si-minio-database-svc-console
+  namespace: default
+  labels:
+    app: si-minio-database
+spec:
+  type: NodePort
+  selector:
+    app: si-minio-database
+  ports:
+  - name: console
+    port: 9002
+    protocol: TCP
+    targetPort: console
 ---
 apiVersion: v1
 kind: Service
@@ -147,12 +164,12 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: si-minio-database-sc-local
   local:
-    path: /mnt/disk/default/minio
+    path: /mnt/minio
   nodeAffinity:
     required:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: dedicated
+        - key: node-role.kubernetes.io/master
           operator: In
           values:
-          - master
+          - ""

@@ -23,3 +23,12 @@ COPY ./file-collect /usr/src/app
 RUN chmod +x entrypoint.sh
 
 CMD ./entrypoint.sh
+
+####################################################################################################
+# Build file-upload app
+
+FROM py-base as file-upload-app
+COPY ./file-upload /usr/src/app
+RUN chmod +x entrypoint.sh
+
+CMD ./entrypoint.sh

@@ -67,12 +67,26 @@ To access URL via public network, edit the VM's assigned security groups to enab
 
 ## MinIO File Storage
 
-[x] Write manifest for stateful MinIO app
-[ ] Write python client for 2nd stage app
+See MinIO manifest for details. Deployed onto a single note using local filesystem storage at `/mnt/data/minio`. 
 
-## Create PVC
+To create local filesystem directory (with MiniKube)
 
-[ ] Check altnerative PVC backends (work with exisiting local file PVs?)
+```bash 
+minikube ssh
+sudo mkdir -p /mnt/minio
+```
+
+To access Console URL via public network, edit the VM's assigned security groups to enable Inbound Traffic TCP traffic to port 8081. 
+
+```bash 
+kubectl port-forward svc/si-minio-database-svc-console 8081:9002 --address=0.0.0.0
+```
+
+To access API URL via public network, edit the VM's assigned security groups to enable Inbound Traffic TCP traffic to port 8082. 
+
+```bash 
+kubectl port-forward svc/si-minio-database-svc 8082:9000 --address=0.0.0.0
+```
 
 ## Create file-collect Container
 
@@ -104,7 +118,7 @@ docker run \
   duartcs/filecollect:latest
 ```
 
-## Create file-copy Container
+## Create file-upload Container
 
 [ ] Consume same PCV as stage 1
 [ ] Write app to receive list of file paths as inputs 
@@ -119,6 +133,14 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install kfp --upgrade
 ```
+
+2. Compile Pipeline manifest YAML
+
+```bash
+python3 ./pipeline/pipeline.py
+```
+
+3. Upload to Kubeflow via GUI (alternatively use Kubeflow client)
 
 ## Requirements
 
